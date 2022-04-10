@@ -1,0 +1,25 @@
+version: '2'
+
+services:
+  api-gateway:
+    build: .
+    container_name: api-gateway
+    cap_add:
+      - IPC_LOCK
+      - SYS_PTRACE
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - /dump:/dump
+      - ./api-jars:/service/api-gateway/api-jars
+      - ./conf:/service/api-gateway/conf
+    network_mode: "host"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Dlogging.config=conf/logback.xml
+      - SPRING_ARGS=--spring.config.location=classpath:/,conf/config.properties --spring.profiles.active=prod
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m

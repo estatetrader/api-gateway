@@ -1,0 +1,61 @@
+@startuml
+title 小程序客户端登录态流转图
+hide empty description
+
+state "未注册未授权未绑定" as unregistered #SpringGreen: 无device-secret/dtk/ntk/utk\n拦截所有API调用（除注册设备设备的API）
+state "等待后端注册设备" as waiting_register_result: 用户系统：\n注册设备\n生成dtk\n根据授权码请求微信获取openId\n如果用户已绑定手机号则生成utk\n如果能够获取unionId则生成ntk
+state "等待后端生成新的登录态" as waiting_update_result: 用户系统：\n根据授权码请求微信获取openId\n如果用户已绑定手机号则生成utk\n如果能够获取unionId则生成ntk
+state "已注册未授权未绑定" as registered #SpringGreen: 有device-secret/dtk无ntk/utk\n拦截所有UnidentifiedUser及以上API调用
+state "引导用户授权头像昵称" as ready_for_confirm #Pink: *第一次显式用户授权*
+state "已注册已授权未绑定" as confirmed #SpringGreen: 有device-secret/dtk/ntk无utk\n拦截所有User及以上API调用
+state "引导用户绑定手机号" as ready_for_band #Pink: *第二次显式用户授权*
+state "已注册已绑定" as band #SpringGreen: 有device-secret/dtk/utk\n开放所有API调用\n此状态实际包括：\n1. 已注册未授权已绑定\n2. 已注册已授权已绑定\n登录完成
+
+[*] -right[#red]-> unregistered: 未发现dtk/device-secret\n（首次进入小程序）
+[*] -down[#green]-> waiting_update_result: 发现dtk/device-secret\n（非首次进入小程序）\n请求微信获取微信客户端授权码（静默）\n使用授权码调用user.partnerXcxLogin更新本地登录态
+
+waiting_update_result -[#green]-> confirmed: 收到ntk\n表示用户之前已经授权过\n获取昵称头像权限\n或已关注过公众号\n删除本地utk（如果存在）
+waiting_update_result -[#green]-> band: 收到utk\n表示用户之前\n已经绑定过手机号
+waiting_update_result -[#green]-> registered: 未收到ntk/utk\n删除本地ntk/utk（若存在）
+
+unregistered -[#red]-> waiting_register_result: 产生随机did\n请求微信获取微信客户端授权码（静默）\n使用授权码调用user.partnerLoginFirstLanding注册设备
+waiting_register_result -[#red]-> registered: 收到device-secret/dtk
+registered -[#red]-> ready_for_confirm: 需要调用UnidentifiedUser\n及以上级别的API\n或收到-363错误码
+ready_for_confirm -[#red]-> confirmed: 引导用户授权个人信息\n请求微信获取头像昵称授权码\n调用user.partnerXcxLogin
+confirmed -[#red]-> ready_for_band: 需要调用User及以上级别的API\n或收到-360错误码
+ready_for_band -[#red]-> band: 引导用户绑定手机号\n调用user.partnerXcxLogin
+
+waiting_register_result -[#blue]-> confirmed: 收到ntk\n表示用户之前已经授权过\n获取昵称头像权限\n或已关注过公众号
+waiting_register_result -[#blue]-> band: 收到utk\n表示用户之前\n已经绑定过手机号
+
+registered -[#grey]-> unregistered: device-secret或dtk丢失\n或收到-181/-361错误码
+band -[#grey]-> confirmed: 用户主动退出登录\nutk过期或丢失\n或收到-180/-300/-360错误码\n用户解绑手机号
+
+note right of unregistered
+token:
+dtk（设备凭据）
+ntk（未绑定手机号的用户凭据）
+utk（已绑定手机号的用户凭据）
+
+概念：
+授权表示用户授权小程序使用其昵称头像
+绑定表示用户授权使用其手机号
+endnote
+
+legend bottom right
+红色表示新用户在新设备上登录流程
+蓝色表示老用户在新设备上登录流程
+绿色表示老用户在老设备上登录流程
+灰色表示登录态的特殊情况
+
+utk可以取代ntk，ntk仅在utk不存在时有效
+
+绿色框表示客户端状态，依靠本地dtk/ntk/utk是否存在进行判断
+以下是图中未列出的状态：
+1. 未注册未授权已绑定
+2. 未注册已授权未绑定
+3. 未注册已授权已绑定
+客户端在这三种状态下应调用user.repairDeviceRegister来找回dtk
+endlegend
+
+@enduml

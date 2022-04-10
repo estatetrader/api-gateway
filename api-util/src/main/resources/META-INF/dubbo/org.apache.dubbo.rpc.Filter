@@ -1,0 +1,7 @@
+notificationProvider=com.estatetrader.dubboext.NotificationProviderFilter
+apiInvokeLogger=com.estatetrader.dubboext.ApiInvokeLoggerFilter
+notificationConsumer=com.estatetrader.dubboext.NotificationConsumerFilter
+exceptionHandleProvider=com.estatetrader.dubboext.ExceptionHandleProviderFilter
+callInfoProvider=com.estatetrader.dubboext.CallInfoProviderFilter
+callInfoConsumer=com.estatetrader.dubboext.CallInfoConsumerFilter
+attachmentClearProvider=com.estatetrader.dubboext.AttachmentClearProviderFilter

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<!--suppress ALL -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>API Info</title>
+    <link rel="stylesheet" href="assets/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/main.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+</head>
+<body>
+<!-- vue lib -->
+<script src="assets/vue.js"></script>
+<script src="assets/jquery-3.4.1.slim.min.js"></script>
+<script src="assets/popper.min.js"></script>
+<script src="assets/bootstrap.min.js"></script>
+
+<div id="app">
+    <header class="navbar navbar-expand navbar-dark flex-column flex-md-row position-sticky doc-header">
+        <a class="navbar-brand mr-0 mr-md-2" href="#">API Gateway</a>
+        <form class="form-inline" style="margin-left: 2rem">
+            <select class="custom-select" v-model="scope" style="background-color: transparent;border-color: #b3a7a78c;">
+                <option value="all" selected>All</option>
+                <option value="client">Client</option>
+                <option value="backend">Backend</option>
+                <option value="internal">Internal</option>
+                <option value="integrated">Integrated</option>
+            </select>
+        </form>
+    </header>
+
+    <div class="container-fluid" id="container" style="display: none">
+        <div v-if="!loaded" class="row flex-xl-nowrap">
+            <span style="margin: 5em 10em">API Info is loading...</span>
+        </div>
+        <div v-if="apiSchemaError" class="row flex-xl-nowrap">
+            <span>Error from server:
+                <span style="color: red">{{apiSchemaError}}</span>
+            </span>
+        </div>
+        <div v-if="loaded && !apiSchemaError" class="row flex-xl-nowrap">
+            <!-- left for api list -->
+            <div class="doc-sidebar" v-bind:class="['col-md-3 col-xl-2']">
+                <form class="doc-search d-flex align-items-center">
+                    <span style="position: relative; display: block; flex: 1">
+                        <input type="search"
+                               class="form-control ds-input"
+                               v-model="query"
+                               placeholder="Search..."
+                               style="position: relative; vertical-align: top;">
+                    </span>
+                </form>
+
+                <nav class="doc-links">
+                    <div v-for="group in searchResult">
+                        <a v-on:click="expandGroup(group)"
+                           class="searched-api-group-link"
+                           v-bind:class="{active: $root.selectedGroupName === group.groupName}">{{group.groupName}}</a>
+                        <ul v-if="$root.expandedGroupNames.includes(group.groupName)" class="nav flex-column">
+                            <li class="nav-item"
+                                v-for="api in group.apis">
+                                <a v-on:click="selectApi(api)"
+                                   v-bind:class="{active: $root.selectedApi === api}"
+                                   class="searched-api-link">{{api.methodName.substring(group.groupName.length)}}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- right for the detail of the selected api -->
+            <main v-bind:class="['col-md-9 col-xl-10']"
+                  style="padding-top: 1rem; padding-left: 1rem">
+                <div v-if="selectedApi">
+                    <h2 id="{{selectedApi.targetHashId}}">
+                        <a class="target-api-link" v-bind:href="'#' + selectedApi.targetHashId">{{selectedApi.methodName}}</a>
+                    </h2>
+                    <div class="api-detail">
+                        <!-- summary -->
+                        <div class="api-info-block info-block">
+                            <div>
+                                <label>安全级别 : </label>
+                                <span>{{selectedApi.securityLevel}}</span>
+                            </div>
+                            <div>
+                                <label>接口分组 : </label>
+                                <span>{{selectedApi.groupName}}</span>
+                            </div>
+                            <div>
+                                <label>接口状态 : </label>
+                                <span>{{selectedApi.state}}</span>
+                            </div>
+                            <div>
+                                <label>接口负责 : </label>
+                                <span>{{selectedApi.methodOwner}}</span>
+                            </div>
+                            <div>
+                                <label>项目负责 : </label>
+                                <span>{{selectedApi.groupOwner}}</span>
+                            </div>
+                            <div>
+                                <label>接口含义 : </label>
+                                <div class="desc" v-html="selectedApi.description + (selectedApi.detail && selectedApi.detail != '' ? '\n' + selectedApi.detail : '')"></div>
+                            </div>
+                            <div>
+                                <label>所属JAR : </label>
+                                <span>{{selectedApi.jarFile}}</span>
+                            </div>
+                            <div>
+                                <label>API样例返回值 ：</label>
+                                <span>{{selectedApi.exampleValue}}</span>
+                            </div>
+                            <div>
+                                <label>返回值类型 ：</label>
+                                <span v-html="selectedApi.returnType.toHtml(selectedApi)"></span>
+                            </div>
+                            <ul class="definition-issues" v-if="selectedApi.issues.length > 0">
+                                <li v-for="issue in selectedApi.issues">
+                                    <span>{{issue}}</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="api-info-block info-block">
+                            <h4>API返回值样例</h4>
+                            <div>
+                                <pre class="example-value-view" v-text="selectedApi.formattedExampleValue()"></pre>
+                            </div>
+                        </div>
+
+                        <!-- parameters -->
+                        <div class="api-info-block info-block">
+                            <div>
+                                <h4>API参数列表</h4>
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>参数名</th>
+                                        <th>类型</th>
+                                        <th>描述</th>
+                                        <th>是否必需</th>
+                                        <th>加密方式</th>
+                                        <th>参数样例值</th>
+                                    </tr>
+                                    <tr v-for="param in selectedApi.parameters">
+                                        <td>{{param.name}}</td>
+                                        <td>
+                                            <span v-html="param.type.toHtml(selectedApi)"></span>
+                                        </td>
+                                        <td>
+                                            <div class="desc" v-html="param.description"/>
+                                        </td>
+                                        <td>{{param.required}}</td>
+                                        <td>{{param.encryptionMethod}}</td>
+                                        <td>
+                                            <pre class="example-value-view" v-text="param.formattedExampleValue(selectedApi)"></pre>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- response -->
+                        <div class="api-info-block info-block">
+                            <h3>相关实体定义列表</h3>
+                            <ul class="list-unstyled">
+                                <li v-for="struct in selectedApi.referredStructs">
+                                    <div class="struct-definition" v-bind:id="struct.type.targetHashId(selectedApi)" v-bind:class="{selected: struct.matchesKeyword($root.query)}">
+                                        <h4 class="struct-name">
+                                            <span>{{struct.type.title}}</span>
+                                        </h4>
+                                    </div>
+                                    <table class="table table-bordered">
+                                        <tr>
+                                            <th>名称</th>
+                                            <th>类型</th>
+                                            <th>描述</th>
+                                            <th>字段样例值</th>
+                                        </tr>
+                                        <tr v-for="field in struct.fields">
+                                            <td>{{field.name}}</td>
+                                            <td class="struct-field-type-column">
+                                                <span v-html="field.type.toHtml(selectedApi)"></span>
+                                            </td>
+                                            <td class="struct-field-desc-column">
+                                                <div class="desc" v-html="field.desc"/>
+                                            </td>
+                                            <td><pre class="example-value-view" v-text="field.formattedExampleValue(selectedApi)"></pre></td>
+                                        </tr>
+                                    </table>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- code -->
+                        <div class="api-info-block info-block">
+                            <h3>业务异常列表</h3>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>服务</th>
+                                    <th>需要客户端处理</th>
+                                    <th>错误码</th>
+                                    <th style="max-width: 10rem">名称</th>
+                                    <th>描述</th>
+                                </tr>
+                                <tr v-for="code in selectedApi.errorCodes">
+                                    <td>{{code.service}}</td>
+                                    <td>{{code.exposedToClient}}</td>
+                                    <td>{{code.code}}</td>
+                                    <td>{{code.name}}</td>
+                                    <td>
+                                        <div class="desc" v-html="code.desc"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="!selectedApi" class="jumbotron">
+                    <h1 class="display-4">Welcome to Use API-Gateway</h1>
+                    <p class="lead">Please enter an API name you are interested in and see the details of it,
+                    or click one of the group names on the left panel and then click the an API shown bellow
+                    that group.</p>
+                </div>
+
+                <div class="global-block info-block">
+                    <h3>系统级参数列表</h3>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>参数名</th>
+                            <th>描述</th>
+                            <th>是否由客户端指定</th>
+                            <th>是否可以作为API自动注入参数</th>
+                        </tr>
+                        <tr v-for="param in apiSchema.commonParams">
+                            <td>{{param.name}}</td>
+                            <td>
+                                <div class="desc" v-html="param.desc"/>
+                            </td>
+                            <td>{{param.fromClient}}</td>
+                            <td>{{param.injectable}}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="global-block info-block">
+                    <h3>通用异常列表</h3>
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>错误码</th>
+                            <th style="max-width: 10rem">名称</th>
+                            <th>描述</th>
+                        </tr>
+                        <tr v-for="code in apiSchema.codes">
+                            <td>{{code.code}}</td>
+                            <td>{{code.name}}</td>
+                            <td>
+                                <div class="desc" v-html="code.desc"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+<script src="assets/main.js"></script>
+<!-- our rendering code -->
+<script>
+    $('#container').css("display", "block");
+
+    if (location.hash && location.hash.startsWith('#api_')) {
+        let query = location.hash.substring('#api_'.length);
+        let i = query.indexOf('_type_');
+        if (i >= 0) {
+            query = query.substring(0, i);
+        }
+        if (query.length > 0) {
+            app.query = query;
+        }
+    }
+
+    let apiUrl = '/apigw/info.api';
+
+    fetch(apiUrl, {cache: "default"})
+        .then(resp => resp.text())
+        .then(text => {
+            if (text && text.startsWith('{')) {
+                let apiSchema = JSON.parse(text);
+                app.updateApiSchema(apiSchema);
+                console.info("api schema loaded");
+            } else {
+                console.error("invalid response returned from server: " + text);
+            }
+        });
+</script>
+</body>
+</html>

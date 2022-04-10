@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd"
+       default-lazy-init="true">
+
+    <context:property-placeholder location="classpath*:config.properties"/>
+
+    <beans profile="!default">
+        <bean id="zkOperator" class="com.estatetrader.util.ZKOperator">
+            <constructor-arg name="connectString" value="${com.estatetrader.rule.zk.url}"/>
+            <constructor-arg name="sessionTimeout" value="${com.estatetrader.rule.zk.sessionTimeout}"/>
+        </bean>
+
+        <bean id="blacklistsService" class="com.estatetrader.rule.cases.BlacklistsService">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="blacklistsListeners" factory-bean="blacklistsService" factory-method="createListeners"/>
+
+        <bean id="expiredUserTokenService" class="com.estatetrader.rule.expire.ExpiredUserTokenService">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="expiredUserTokenListener" factory-bean="expiredUserTokenService" factory-method="createListener"/>
+
+        <bean id="requestVerifyCodeService" class="com.estatetrader.rule.cases.RequestVerifyCodeService">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="requestVerifyCodeListeners" factory-bean="requestVerifyCodeService" factory-method="createListeners"/>
+
+        <bean id="superUserService" class="com.estatetrader.rule.cases.SuperUserService">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="superUserListener" factory-bean="superUserService" factory-method="createListener"/>
+
+        <bean id="authorizationTree" class="com.estatetrader.rule.authorizing.AuthorizationTree">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="authorizationListener" factory-bean="authorizationTree" factory-method="createListener">
+            <constructor-arg name="enabled" value="${com.estatetrader.authorization.tree.enabled}"/>
+        </bean>
+    </beans>
+
+    <beans profile="api-gateway">
+        <bean id="apiDefinition" class="com.estatetrader.rule.definition.ApiDefinition">
+            <constructor-arg name="operator" ref="zkOperator"/>
+        </bean>
+        <bean id="apiDefinitionManager" factory-bean="apiDefinition" factory-method="createManager"/>
+
+        <bean id="gatewayRedisConfig" class="com.estatetrader.common.utils.redis.RedisConfig">
+            <property name="host" value="${gateway.redis.host}"/>
+            <property name="port" value="${gateway.redis.port}"/>
+            <property name="password" value="${gateway.redis.password}"/>
+            <property name="database" value="${gateway.redis.database}"/>
+        </bean>
+        <bean id="gatewayRedisPool" class="com.estatetrader.common.utils.redis.RedisPool">
+            <constructor-arg name="config" ref="gatewayRedisConfig"/>
+        </bean>
+        <bean id="backendMessageTopicListener" class="com.estatetrader.apigw.core.services.BackendMessageTopicListener" init-method="start">
+            <constructor-arg name="redisPool" ref="gatewayRedisPool"/>
+        </bean>
+    </beans>
+</beans>
