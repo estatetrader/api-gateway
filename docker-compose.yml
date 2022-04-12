@@ -12,7 +12,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - /dump:/dump
+      - ./dump:/dump
       - ./api-jars:/service/api-gateway/api-jars
       - ./conf:/service/api-gateway/conf
     network_mode: "host"
