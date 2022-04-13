@@ -3,8 +3,8 @@ set -e
 rm -rf api-jars-new
 mkdir api-jars-new
 echo --- collect all api jars
-for folder_name in ../com.estatetrader.dubbo.*; do
-  service_name=${folder_name##*.}
+for folder_name in ../*-service; do
+  service_name=${folder_name%*-service}
   for api_jar in $folder_name/service/target/$service_name-service/lib/$service_name-api-*.jar; do
     if [ -f "$api_jar" ]; then
       cp $api_jar api-jars-new/
