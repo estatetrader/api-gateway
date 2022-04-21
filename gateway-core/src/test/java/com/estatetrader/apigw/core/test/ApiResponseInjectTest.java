@@ -113,6 +113,6 @@ public class ApiResponseInjectTest extends BaseHttpTest {
         params.put("sessionId", "123");
         params.put("limit", "100");
         String result = executeRequest(params, ApiResponseInjectTest.class);
-        assertTrue(result.contains("\"content\":[{\"articleIds\":[1,2,3],\"articleList\":[{\"authorId\":3,\"id\":1},{\"authorId\":3,\"id\":2},{\"authorId\":3,\"id\":3}],\"hasMore\":false,\"nextOffset\":0}"));
+        assertTrue(result.contains("\"content\":[{\"articleIds\":[1,2,3],\"articleList\":[{\"authorId\":3,\"coverFigure\":null,\"createTime\":null,\"id\":1,\"lastUpdateTime\":null,\"summary\":null,\"title\":null},{\"authorId\":3,\"coverFigure\":null,\"createTime\":null,\"id\":2,\"lastUpdateTime\":null,\"summary\":null,\"title\":null},{\"authorId\":3,\"coverFigure\":null,\"createTime\":null,\"id\":3,\"lastUpdateTime\":null,\"summary\":null,\"title\":null}],\"hasMore\":false,\"nextOffset\":0}"));
     }
 }
