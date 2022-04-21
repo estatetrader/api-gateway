@@ -45,10 +45,10 @@ public interface SerializingConfigurer {
             SerializerFeature.WriteMapNullValue,//null属性，序列化为null,do by guankaiqiang,android sdk中 JSON.optString()将null convert成了"null",故关闭该特性
             SerializerFeature.NotWriteRootClassName, //与pocrd保持一致
             //            SerializerFeature.WriteEnumUsingToString, //与pocrd保持一致
-            SerializerFeature.WriteNullNumberAsZero,//与pocrd保持一致
-            SerializerFeature.WriteNullBooleanAsFalse,//与pocrd保持一致
-            SerializerFeature.WriteNullStringAsEmpty, //配置SerializerFeature.WriteMapNullValue 后需要同时配置， 使null变成空字符串
-            SerializerFeature.WriteNullListAsEmpty,
+//            SerializerFeature.WriteNullNumberAsZero,//与pocrd保持一致
+//            SerializerFeature.WriteNullBooleanAsFalse,//与pocrd保持一致
+//            SerializerFeature.WriteNullStringAsEmpty, //配置SerializerFeature.WriteMapNullValue 后需要同时配置， 使null变成空字符串
+//            SerializerFeature.WriteNullListAsEmpty,
             SerializerFeature.WriteDateUseDateFormat
         );
 
