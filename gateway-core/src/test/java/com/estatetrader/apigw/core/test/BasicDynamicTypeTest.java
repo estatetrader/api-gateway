@@ -92,7 +92,7 @@ public class BasicDynamicTypeTest extends BaseHttpTest {
         params.put("_mt", "test.getProductInfo");
         params.put("pid", "1");
         String response1 = executeRequest(params, BasicDynamicTypeTest.class);
-        assertTrue(response1.contains("{\"mainActivity\":{\"groupSize\":3,\"@classKey\":\"GroupBuyInfo\"},\"productId\":1,\"subActivities\":[],\"title\":\"#1\"}"));
+        assertTrue(response1.contains("{\"mainActivity\":{\"groupSize\":3,\"@classKey\":\"GroupBuyInfo\"},\"productId\":1,\"title\":\"#1\"}"));
     }
 
     @Test

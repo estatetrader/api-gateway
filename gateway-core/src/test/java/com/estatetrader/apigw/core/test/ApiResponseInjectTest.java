@@ -35,11 +35,11 @@ public class ApiResponseInjectTest extends BaseHttpTest {
 
         @Description("has more")
         @ExampleValue("true")
-        public boolean hasMore = false;
+        public boolean hasMore;
 
         @Description("nextOffset")
         @ExampleValue("nextOffset")
-        public int nextOffset = 0;
+        public int nextOffset;
     }
 
     @Description("文章的简略信息，不包含文章正文")
@@ -113,6 +113,6 @@ public class ApiResponseInjectTest extends BaseHttpTest {
         params.put("sessionId", "123");
         params.put("limit", "100");
         String result = executeRequest(params, ApiResponseInjectTest.class);
-        assertTrue(result.contains("\"content\":[{\"articleIds\":[1,2,3],\"articleList\":[{\"authorId\":3,\"coverFigure\":\"\",\"createTime\":0,\"id\":1,\"lastUpdateTime\":0,\"summary\":\"\",\"title\":\"\"},{\"authorId\":3,\"coverFigure\":\"\",\"createTime\":0,\"id\":2,\"lastUpdateTime\":0,\"summary\":\"\",\"title\":\"\"},{\"authorId\":3,\"coverFigure\":\"\",\"createTime\":0,\"id\":3,\"lastUpdateTime\":0,\"summary\":\"\",\"title\":\"\"}],\"hasMore\":false,\"nextOffset\":0}"));
+        assertTrue(result.contains("\"content\":[{\"articleIds\":[1,2,3],\"articleList\":[{\"authorId\":3,\"id\":1},{\"authorId\":3,\"id\":2},{\"authorId\":3,\"id\":3}],\"hasMore\":false,\"nextOffset\":0}"));
     }
 }
