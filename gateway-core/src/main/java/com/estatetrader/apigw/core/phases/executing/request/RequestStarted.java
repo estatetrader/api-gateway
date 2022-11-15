@@ -363,7 +363,11 @@ public interface RequestStarted {
                 }
 
                 if (context.apiCalls.size() == 1) {
-                    call.parameters[i] = context.request.getParameter(ap.name);
+                    String value = context.request.getParameter(ap.name);
+                    if (value == null) {
+                        value = context.request.getParameter("$p" + i);
+                    }
+                    call.parameters[i] = value;
                 } else {
                     String name = methodIndex + "_" + ap.name;
                     call.parameters[i] = context.request.getParameter(name);

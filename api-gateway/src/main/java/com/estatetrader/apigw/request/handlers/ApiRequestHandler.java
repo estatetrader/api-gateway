@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * 处理API调用的请求
  */
-@RequestHandler(handlerName = "api-request", urlPatterns = {"/apigw/m.api", "/apigw/*.*.api"})
+@RequestHandler(handlerName = "api-request", urlPatterns = {"/apigw/m.api", "/apigw/*.*.api", "/apigw/*.*/**"})
 public class ApiRequestHandler implements GatewayRequestHandler {
 
     private final RequestExecutor executor;
